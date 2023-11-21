@@ -14,7 +14,7 @@ pub fn translate(
 ) -> Result<Value, Box<dyn Error>> {
     let client = reqwest::blocking::ClientBuilder::new().build()?;
     let res: Value = client
-        .get(format!("https://api.wordnik.com/v4/words.json/{word}?api_key=sy04qr76gpejdxv3dxfyqvfgrmjwja3jygi59vjdcmmdp5z5g"))
+        .get(format!("https://api.wordnik.com/v4/word.json/{word}/definitions?limit=200&includeRelated=false&useCanonical=false&includeTags=false&api_key=sy04qr76gpejdxv3dxfyqvfgrmjwja3jygi59vjdcmmdp5z5g"))
         .send()?
         .json()?;
 
