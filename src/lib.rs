@@ -18,17 +18,84 @@ pub fn translate(
         .send()?
         .json()?;
 
-    fn parse_result(res: Value) -> Option<String> {
-        let result = res.as_object()?.get("translation")?.as_str()?.to_string();
+    fn parse_result(res: Value, client: Client) -> Option<Value> {
+        let body = res.as_array()?.get(0)?.as_object()?;
+        let (phonetics, meanings) = (body.get("phonetics")?, body.get("meanings")?);
 
-        Some(result.replace("@@", "/"))
+        let (mut pronunciations, mut explanations, mut associations, mut sentence) =
+            (Vec::new(), Vec::new(), Vec::new(), Vec::new());
+
+        for item in phonetics.as_array()? {
+            let audio_url = item.get("audio")?.as_str()?;
+            let (region, voice);
+
+            if audio_url.is_empty() {
+                region = "";
+                voice = vec![];
+            } else {
+                region = audio_url.get((audio_url.len() - 6)..(audio_url.len() - 4))?;
+                voice = client.get(audio_url).send().ok()?.bytes().ok()?.to_vec();
+            };
+
+            let symbol = if let Some(text) = item.get("text") {
+                text.as_str()?
+            } else {
+                ""
+            };
+
+            pronunciations.push(json!({
+            "region": region,
+            "symbol": symbol,
+            "voice": voice,
+            }));
+        }
+
+        for item in meanings.as_array()? {
+            let _trait = item.get("partOfSpeech")?.as_str()?;
+            let mut explains = Vec::new();
+            let definitions = item.get("definitions")?.as_array()?;
+
+            for definition in definitions {
+                explains.push(definition.get("definition")?.as_str()?);
+
+                if let Some(example) = definition.get("example") {
+                    sentence.push(json!({
+                    "source": example.as_str()?,
+                    "target": "",
+                    }));
+                };
+            }
+
+            explanations.push(json!({
+            "trait": _trait,
+            "explains": explains,
+            }));
+
+            let synonyms = item
+                .get("synonyms")?
+                .as_array()?
+                .into_iter()
+                .map(|x| x.as_str().unwrap())
+                .collect::<Vec<_>>();
+
+            associations.extend(synonyms);
+        }
+
+        Some(json!({
+            "pronunciations": pronunciations,
+            "explanations": explanations,
+            "associations": associations,
+            "sentence": sentence,
+        }))
     }
-    if let Some(result) = parse_result(res) {
-        return Ok(Value::String(result));
+
+    if let Some(result) = parse_result(res, client) {
+        return Ok(result);
     } else {
         return Err("Response Parse Error".into());
     }
 }
+
 
 #[cfg(test)]
 mod tests {
