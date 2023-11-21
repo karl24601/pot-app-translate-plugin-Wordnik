@@ -4,7 +4,7 @@
   "icon": "lingva.svg",
   "display": "Wordnik",
   "homepage": "https://github.com/karl24601/pot-app-translate-plugin-Wordnik",
-  "needs": [{ "key": "requestPath", "display": "请求地址" }],
+  "needs": [],
   "language": {
     "auto": "auto",
     "zh_cn": "zh",
