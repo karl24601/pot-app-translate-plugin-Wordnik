@@ -13,23 +13,8 @@ pub fn translate(
     needs: HashMap<String, String>, // 插件需要的其他参数,由info.json定义
 ) -> Result<Value, Box<dyn Error>> {
     let client = reqwest::blocking::ClientBuilder::new().build()?;
-
-    let mut url = match needs.get("requestPath") {
-        Some(url) => url.to_string(),
-        None => "lingva.pot-app.com".to_string(),
-    };
-    if url.is_empty() {
-        url = "lingva.pot-app.com".to_string();
-    }
-    if !url.starts_with("http") {
-        url = format!("https://{}", url);
-    }
-
-    let plain_text = text.replace("/", "@@");
-    let encode_text = encode(plain_text.as_str());
-
     let res: Value = client
-        .get(format!("{url}/api/v1/{from}/{to}/{encode_text}"))
+        .get(format!("https://api.wordnik.com/v4/words.json/{word}?api_key=sy04qr76gpejdxv3dxfyqvfgrmjwja3jygi59vjdcmmdp5z5g"))
         .send()?
         .json()?;
 
@@ -51,7 +36,6 @@ mod tests {
     #[test]
     fn try_request() {
         let mut needs = HashMap::new();
-        needs.insert("requestPath".to_string(), "lingva.pot-app.com".to_string());
         println!("{result}");
     }
 }
